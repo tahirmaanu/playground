@@ -1,0 +1,292 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+:root{--bg:#070a12;--cyan:#61e6ff;--mint:#82efb9;--blue:#2E9EFF;--pink:#ff9aad;--ink:#edf3ff}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg)}
+body{font-family:Inter,"Inter Display",sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:absolute;inset:0;overflow:hidden}
+.bg{position:absolute;inset:0}
+.blob{position:absolute;border-radius:50%;filter:blur(120px);will-change:transform}
+#b1{width:1100px;height:1100px;background:radial-gradient(circle,#61e6ff55,#61e6ff00 65%)}
+#b2{width:1200px;height:1200px;background:radial-gradient(circle,#2e9eff4a,#2e9eff00 65%)}
+#b3{width:900px;height:900px;background:radial-gradient(circle,#82efb92a,#82efb900 65%)}
+#grid{position:absolute;inset:-80px;background-image:linear-gradient(#ffffff0d 1px,transparent 1px),linear-gradient(90deg,#ffffff0d 1px,transparent 1px);background-size:80px 80px;-webkit-mask-image:radial-gradient(ellipse 60% 55% at 50% 50%,#000 10%,transparent 75%)}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse 75% 70% at 50% 50%,transparent 55%,#000000b0 100%)}
+#grain{position:absolute;inset:-200px;opacity:.07;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+#fade{position:absolute;inset:0;background:#000;pointer-events:none}
+.scene{position:absolute;inset:0;display:none}
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.w{display:inline-block;will-change:transform,filter,opacity}
+.grad{background:linear-gradient(100deg,#61e6ff 0%,#82efb9 55%,#c8fff0 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.eyebrow{font-size:22px;letter-spacing:.32em;text-transform:uppercase;color:#61e6ffcc;font-weight:500;font-family:ui-monospace,"DejaVu Sans Mono",monospace}
+h1{font-weight:700;letter-spacing:-.045em;line-height:1.02}
+
+/* s1 logo */
+#logo{width:220px;height:220px;overflow:visible}
+#wordmark{font-size:120px;font-weight:700;letter-spacing:-.05em;margin-top:36px}
+#tagline{margin-top:20px;font-size:28px;color:#edf3ff99;font-weight:400;letter-spacing:-.01em}
+
+/* s2 headline */
+#s2 h1{font-size:176px}
+#s2 .eyebrow{margin-bottom:44px}
+#s2 .sub{margin-top:44px;font-size:34px;color:#edf3ffa0;font-weight:400;letter-spacing:-.01em}
+
+/* s3 cards */
+#s3 .eyebrow{position:absolute;top:190px;left:0;right:0;text-align:center}
+#s3 h2{position:absolute;top:240px;left:0;right:0;text-align:center;font-size:76px;font-weight:700;letter-spacing:-.04em}
+#cards{position:absolute;top:420px;left:0;right:0;display:flex;justify-content:center;gap:40px;perspective:1800px}
+.card{width:500px;height:430px;border-radius:32px;padding:52px 48px;position:relative;
+  background:linear-gradient(160deg,#ffffff12,#ffffff05 60%);border:1px solid #ffffff22;
+  box-shadow:0 40px 120px #00000080, inset 0 1px 0 #ffffff26;backdrop-filter:blur(20px)}
+.card .ic{width:76px;height:76px;border-radius:22px;display:flex;align-items:center;justify-content:center;margin-bottom:56px}
+.card .ic i{width:22px;height:22px;border-radius:50%;display:block}
+.card h3{font-size:46px;font-weight:650;letter-spacing:-.03em;margin-bottom:20px}
+.card p{font-size:27px;line-height:1.42;color:#edf3ff9c}
+.card .shine{position:absolute;inset:0;border-radius:32px;background:linear-gradient(115deg,transparent 30%,#ffffff1f 48%,transparent 62%);background-size:300% 100%}
+
+/* s4 work */
+#s4 .head{position:absolute;top:120px;left:150px}
+#s4 .head h2{font-size:82px;font-weight:700;letter-spacing:-.04em;margin-top:18px}
+#s4 .count{position:absolute;top:166px;right:150px;font-size:24px;color:#edf3ff80;font-family:ui-monospace,"DejaVu Sans Mono",monospace;letter-spacing:.1em}
+#rowwrap{position:absolute;top:330px;left:0;right:0;height:720px;perspective:2200px}
+#row{position:absolute;left:0;top:0;display:flex;gap:44px;transform-style:preserve-3d}
+.ph{width:330px;flex:none}
+.ph .frame{width:330px;height:587px;border-radius:30px;overflow:hidden;position:relative;border:1px solid #ffffff2e;box-shadow:0 50px 100px #000000a0,0 0 0 8px #0c1121, 0 0 0 9px #ffffff1a}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph .frame:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,#070a12a0)}
+.ph .play{position:absolute;left:24px;bottom:22px;z-index:2;width:46px;height:46px;border-radius:50%;background:#ffffff26;backdrop-filter:blur(10px);border:1px solid #ffffff40;display:flex;align-items:center;justify-content:center}
+.ph .play:before{content:"";border-left:14px solid #fff;border-top:9px solid transparent;border-bottom:9px solid transparent;margin-left:4px}
+.ph .lbl{margin-top:30px;font-size:25px;font-weight:550;letter-spacing:-.01em;color:#edf3ffdd;white-space:nowrap}
+.ph .tag{margin-top:8px;font-size:18px;color:#61e6ffb0;font-family:ui-monospace,"DejaVu Sans Mono",monospace;letter-spacing:.12em;text-transform:uppercase}
+
+/* s5 stack */
+#s5 h1{font-size:120px}
+#s5 .eyebrow{margin-bottom:36px}
+.chip{position:absolute;left:0;top:0;padding:20px 34px;border-radius:999px;font-size:30px;font-weight:550;letter-spacing:-.01em;white-space:nowrap;
+  background:linear-gradient(160deg,#ffffff14,#ffffff06);border:1px solid #ffffff26;box-shadow:0 20px 60px #00000070,inset 0 1px 0 #ffffff22;display:flex;align-items:center;gap:14px}
+.chip i{width:12px;height:12px;border-radius:50%;display:block}
+
+/* s6 quote */
+#s6 .qm{font-size:260px;line-height:.6;height:120px;font-weight:700;margin-bottom:30px}
+#s6 h1{font-size:128px}
+#s6 .rest{margin-top:40px;font-size:36px;line-height:1.45;color:#edf3ffa8;max-width:1500px;font-weight:400}
+#s6 .who{margin-top:64px;display:flex;align-items:center;gap:24px;text-align:left}
+#s6 .who img{width:84px;height:84px;border-radius:50%;object-fit:cover;border:2px solid #61e6ff66}
+#s6 .who b{display:block;font-size:30px;font-weight:600}
+#s6 .who span{font-size:24px;color:#edf3ff80}
+
+/* s7 cta */
+#s7 h1{font-size:150px}
+#btn{margin-top:72px;padding:34px 64px;border-radius:999px;font-size:38px;font-weight:600;color:#04121a;
+  background:linear-gradient(100deg,#61e6ff,#82efb9);box-shadow:0 0 80px #61e6ff66,0 20px 60px #00000080,inset 0 1px 0 #ffffffaa;position:relative;overflow:hidden}
+#btn .sh{position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,#ffffffaa 50%,transparent 65%);background-size:300% 100%}
+#url{margin-top:56px;display:flex;align-items:center;gap:18px;font-size:34px;color:#edf3ffc0;font-weight:500;letter-spacing:-.01em}
+#url svg{width:40px;height:40px}
+#url .by{color:#edf3ff70;font-weight:400}
+</style></head>
+<body><div id="stage">
+  <div class="bg">
+    <div class="blob" id="b1"></div><div class="blob" id="b2"></div><div class="blob" id="b3"></div>
+    <div id="grid"></div>
+  </div>
+
+  <div class="scene center" id="s1">
+    <svg id="logo" viewBox="0 0 24 24">
+      <path class="lp" d="M12 12H4.72727C3.22104 12 2 10.779 2 9.27273V4.72727C2 3.22104 3.22104 2 4.72727 2H9.27273C10.779 2 12 3.22104 12 4.72727V12Z" fill="#2E9EFF"/>
+      <path class="lp" d="M20 2C21.1046 2 22 2.89543 22 4V7C22 8.10457 21.1046 9 20 9H17C15.8954 9 15 8.10457 15 7V4C15 2.89543 15.8954 2 17 2H20Z" fill="#0C79D8"/>
+      <path class="lp" d="M22 19.2727C22 20.779 20.779 22 19.2727 22H14.7273C13.221 22 12 20.779 12 19.2727V12H19.2727C20.779 12 22 13.221 22 14.7273V19.2727Z" fill="#68C4FF"/>
+      <path class="lp" d="M7 15C8.10457 15 9 15.8954 9 17V20C9 21.1046 8.10457 22 7 22H4C2.89543 22 2 21.1046 2 20V17C2 15.8954 2.89543 15 4 15H7Z" fill="#0C79D8"/>
+    </svg>
+    <div id="wordmark" data-split="chars">Lumetrify</div>
+    <div id="tagline">AI video ads &amp; direct response</div>
+  </div>
+
+  <div class="scene center" id="s2">
+    <div class="eyebrow">For DTC eCommerce brands</div>
+    <h1><span data-split="words">Ads that stop</span><br><span data-split="words" class="gline">the scroll.</span></h1>
+    <div class="sub">AI video ads, UGC and direct-response editing.</div>
+  </div>
+
+  <div class="scene" id="s3">
+    <div class="eyebrow">What I make</div>
+    <h2 data-split="words">Creative built to perform.</h2>
+    <div id="cards">
+      <div class="card"><div class="shine"></div><div class="ic" style="background:#61e6ff1f;box-shadow:0 0 40px #61e6ff40"><i style="background:#61e6ff;box-shadow:0 0 18px #61e6ff"></i></div>
+        <h3>AI Video Ads</h3><p>Cinematic AI stories, from first hook to final cut.</p></div>
+      <div class="card"><div class="shine"></div><div class="ic" style="background:#82efb91f;box-shadow:0 0 40px #82efb940"><i style="background:#82efb9;box-shadow:0 0 18px #82efb9"></i></div>
+        <h3>AI UGC</h3><p>Realistic creators and avatars that feel native to the feed.</p></div>
+      <div class="card"><div class="shine"></div><div class="ic" style="background:#ff9aad1f;box-shadow:0 0 40px #ff9aad40"><i style="background:#ff9aad;box-shadow:0 0 18px #ff9aad"></i></div>
+        <h3>Direct Response</h3><p>VSLs and ad cuts edited for watch time and clicks.</p></div>
+    </div>
+  </div>
+
+  <div class="scene" id="s4">
+    <div class="head"><div class="eyebrow">Portfolio</div><h2 data-split="words">Selected work.</h2></div>
+    <div class="count" id="count">01 / 09</div>
+    <div id="rowwrap"><div id="row"></div></div>
+  </div>
+
+  <div class="scene center" id="s5">
+    <div class="eyebrow">The stack</div>
+    <h1><span data-split="words">One editor.</span><br><span data-split="words" class="gline">Every AI tool.</span></h1>
+    <div id="chips"></div>
+  </div>
+
+  <div class="scene center" id="s6">
+    <div class="qm grad">&ldquo;</div>
+    <h1 data-split="words">His work is next level.</h1>
+    <div class="rest">He has no problem with revisions, and he is always learning and aiming higher.</div>
+    <div class="who"><img src="img/ryan-collins.png"><div><b>Ryan Collins</b><span>Founder, Ryan Collins Video</span></div></div>
+  </div>
+
+  <div class="scene center" id="s7">
+    <h1><span data-split="words">Tell me what you’re selling.</span><br><span data-split="words" class="gline">I’ll make it watchable.</span></h1>
+    <div id="btn"><div class="sh"></div><span style="position:relative">Start a conversation ↗</span></div>
+    <div id="url">
+      <svg viewBox="0 0 24 24"><path d="M12 12H4.72727C3.22104 12 2 10.779 2 9.27273V4.72727C2 3.22104 3.22104 2 4.72727 2H9.27273C10.779 2 12 3.22104 12 4.72727V12Z" fill="#2E9EFF"/><path d="M20 2C21.1046 2 22 2.89543 22 4V7C22 8.10457 21.1046 9 20 9H17C15.8954 9 15 8.10457 15 7V4C15 2.89543 15.8954 2 17 2H20Z" fill="#0C79D8"/><path d="M22 19.2727C22 20.779 20.779 22 19.2727 22H14.7273C13.221 22 12 20.779 12 19.2727V12H19.2727C20.779 12 22 13.221 22 14.7273V19.2727Z" fill="#68C4FF"/><path d="M7 15C8.10457 15 9 15.8954 9 17V20C9 21.1046 8.10457 22 7 22H4C2.89543 22 2 21.1046 2 20V17C2 15.8954 2.89543 15 4 15H7Z" fill="#0C79D8"/></svg>
+      <span>lumetrify.com</span><span class="by">· AbuBakar Siddique</span>
+    </div>
+  </div>
+
+  <div id="vig"></div>
+  <div id="grain"></div>
+  <div id="fade"></div>
+</div>
+<script>
+const DURATION = 34;
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const P=(t,a,b)=>clamp((t-a)/(b-a));
+const expo=x=>x>=1?1:1-Math.pow(2,-10*x);
+const quart=x=>1-Math.pow(1-x,4);
+const eio=x=>x<.5?8*x*x*x*x:1-Math.pow(-2*x+2,4)/2;
+const back=x=>{const c=1.4;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+const $=s=>document.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+
+// split text
+$$('[data-split]').forEach(el=>{
+  const mode=el.dataset.split, txt=el.textContent; el.textContent='';
+  const parts = mode==='chars' ? [...txt] : txt.split(' ');
+  parts.forEach((p,i)=>{const s=document.createElement('span');s.className='w';
+    s.textContent=p; el.appendChild(s);
+    if(mode==='words' && i<parts.length-1) el.appendChild(document.createTextNode(' '));});
+});
+$$('.gline .w').forEach(w=>w.classList.add('grad'));
+
+// work row
+const works=[["realistic-ai-drama-ad.jpg","Realistic AI Drama Ad","AI Drama"],["ai-ugc-storytelling.jpg","AI UGC Storytelling","AI UGC"],
+ ["pixar-style-ad.jpg","Pixar Style Ad","3D Animation"],["italian-pharmacist-2.jpg","AI Pharmacist","AI UGC"],
+ ["ai-ugc-halloween-sale.jpg","Halloween Sale","AI UGC"],["cartoon-characters-new.png","Cartoon Characters Ad","Animation"],
+ ["realistic-ai-ad.jpg","AI Cinematic Story Ad","Cinematic"],["lymphoria-crazy-winner.jpg","Lymphoria Crazy Winner","Winning Ad"],
+ ["skincare-exposed.jpg","Skincare Industry Exposed","Direct Response"]];
+const row=$('#row');
+works.forEach(([f,l,t])=>{row.insertAdjacentHTML('beforeend',`<div class="ph"><div class="frame"><img src="img/${f}"><div class="play"></div></div><div class="lbl">${l}</div><div class="tag">${t}</div></div>`)});
+
+// chips
+const tools=[["Premiere Pro","#9999ff"],["After Effects","#cf96fd"],["Higgsfield","#82efb9"],["HeyGen","#61e6ff"],
+ ["ElevenLabs","#edf3ff"],["Kling 3.0","#ff9aad"],["VEO 3.1","#68C4FF"],["Seedance 2.0","#ffd27a"]];
+const chipPos=[[-690,-330],[560,-350],[-800,40],[700,-20],[-560,330],[520,320],[-90,-430],[40,430]];
+const chips=$('#chips');
+tools.forEach(([n,c])=>chips.insertAdjacentHTML('beforeend',`<div class="chip"><i style="background:${c};box-shadow:0 0 14px ${c}"></i>${n}</div>`));
+
+function wordsIn(el,t,start,{stagger=.09,dur=.9,y=50,blur=16,out=null,outDur=.45}={}){
+  $$('.w',el).forEach((w,i)=>{
+    const k=expo(P(t,start+i*stagger,start+i*stagger+dur));
+    const o= out==null?1:1-eio(P(t,out-outDur,out));
+    w.style.opacity=k*o;
+    w.style.transform=`translateY(${(1-k)*y-(1-o)*24}px)`;
+    w.style.filter=`blur(${(1-k)*blur+(1-o)*12}px)`;
+  });
+}
+function rise(el,t,start,{dur=.9,y=40,blur=12,out=null,outDur=.45,scale=0}={}){
+  const k=expo(P(t,start,start+dur)); const o= out==null?1:1-eio(P(t,out-outDur,out));
+  el.style.opacity=k*o;
+  el.style.transform=`translateY(${(1-k)*y-(1-o)*24}px) scale(${1-(1-k)*scale})`;
+  el.style.filter=`blur(${(1-k)*blur+(1-o)*12}px)`;
+}
+function show(id,t,a,b){const el=$(id);const v=t>=a&&t<b;el.style.display=v?'flex':'none';if(id==='#s3'||id==='#s4')el.style.display=v?'block':'none';return v}
+
+function render(t){
+  // background drift
+  $('#b1').style.transform=`translate(${-150+Math.sin(t*.21)*160}px,${-250+Math.cos(t*.17)*120}px)`;
+  $('#b2').style.transform=`translate(${1100+Math.cos(t*.15)*180}px,${300+Math.sin(t*.19)*140}px)`;
+  $('#b3').style.transform=`translate(${600+Math.sin(t*.12+2)*300}px,${500+Math.cos(t*.14)*100}px)`;
+  $('#grid').style.transform=`translate(${(t*6)%80}px,${(t*4)%80}px)`;
+  $('#grain').style.transform=`translate(${(Math.sin(t*97.3)*100)|0}px,${(Math.cos(t*71.1)*100)|0}px)`;
+  $('#fade').style.opacity= Math.max(1-quart(P(t,0,.9)), eio(P(t,DURATION-1,DURATION)));
+
+  // S1 logo 0–3.6
+  if(show('#s1',t,0,3.6)){
+    const out=3.6, o=1-eio(P(t,3.1,out));
+    $$('.lp').forEach((p,i)=>{const k=back(P(t,.25+i*.13,.95+i*.13));
+      p.style.transformOrigin='12px 12px';p.style.transformBox='view-box';
+      p.style.opacity=clamp(k*1.5);p.style.transform=`scale(${.2+.8*k}) rotate(${(1-k)*-40}deg)`;});
+    const lg=$('#logo'); lg.style.transform=`scale(${1+(1-o)*.25}) translateY(${-quart(P(t,1.1,2))*10}px)`; lg.style.opacity=o; lg.style.filter=`blur(${(1-o)*14}px) drop-shadow(0 0 ${30+20*Math.sin(t*2)}px #2e9eff88)`;
+    wordsIn($('#wordmark'),t,1.15,{stagger:.045,dur:.9,y:30,out});
+    rise($('#tagline'),t,1.9,{out,y:20});
+  }
+  // S2 headline 3.4–8.2
+  if(show('#s2',t,3.4,8.2)){
+    const out=8.2;
+    rise($('#s2 .eyebrow'),t,3.5,{out,y:20});
+    const sp=$$('#s2 [data-split]'); wordsIn(sp[0],t,3.65,{out}); wordsIn(sp[1],t,4.05,{out,stagger:.12});
+    rise($('#s2 .sub'),t,4.9,{out,y:24});
+    $('#s2 h1').style.transform=`scale(${1+P(t,3.4,8.2)*.04})`;
+  }
+  // S3 cards 8.0–13.4
+  if(show('#s3',t,8.0,13.4)){
+    const out=13.4;
+    rise($('#s3 .eyebrow'),t,8.1,{out,y:20});
+    wordsIn($('#s3 h2'),t,8.2,{out});
+    $$('.card').forEach((c,i)=>{const s=8.75+i*.16; const k=expo(P(t,s,s+1.1)); const o=1-eio(P(t,out-.5+i*.05,out));
+      const drift=Math.sin(t*1.1+i)*6;
+      c.style.opacity=k*o; c.style.filter=`blur(${(1-k)*14+(1-o)*12}px)`;
+      c.style.transform=`translateY(${(1-k)*160+drift-(1-o)*30}px) rotateX(${(1-k)*28}deg) rotateY(${(i-1)*(1-k)*-14}deg)`;
+      $('.shine',c).style.backgroundPosition=`${150-P(t,s+.8,s+2.2)*200}% 0`;});
+  }
+  // S4 work 13.2–20.6
+  if(show('#s4',t,13.2,20.6)){
+    const out=20.6;
+    rise($('#s4 .eyebrow'),t,13.3,{out,y:20});
+    wordsIn($('#s4 h2'),t,13.4,{out});
+    rise($('#count'),t,13.6,{out,y:20});
+    const pp=P(t,13.2,20.6), x= 900 - pp*2650;
+    row.style.transform=`translateX(${x}px) rotateY(-14deg) rotateX(4deg)`;
+    const cards=$$('.ph',row);
+    let nearest=0,best=1e9;
+    cards.forEach((c,i)=>{const s=13.45+i*.1; const k=expo(P(t,s,s+1.1)); const o=1-eio(P(t,out-.55,out));
+      const cx = x + i*374 + 165; const d=(cx-960)/960; if(Math.abs(d)<best){best=Math.abs(d);nearest=i}
+      const lift = Math.max(0,1-Math.abs(d))*1;
+      c.style.opacity=k*o; c.style.filter=`blur(${(1-k)*16+(1-o)*12}px)`;
+      c.style.transform=`translateY(${(1-k)*220 - lift*24 + Math.sin(t*1.3+i)*6}px) translateZ(${lift*60}px)`;});
+    $('#count').textContent=`${String(nearest+1).padStart(2,'0')} / ${String(cards.length).padStart(2,'0')}`;
+  }
+  // S5 stack 20.4–25.4
+  if(show('#s5',t,20.4,25.4)){
+    const out=25.4;
+    rise($('#s5 .eyebrow'),t,20.5,{out,y:20});
+    const sp=$$('#s5 [data-split]'); wordsIn(sp[0],t,20.6,{out}); wordsIn(sp[1],t,20.95,{out,stagger:.12});
+    $$('.chip').forEach((c,i)=>{const s=21.2+i*.11; const k=back(P(t,s,s+.75)); const ko=expo(P(t,s,s+.75)); const o=1-eio(P(t,out-.5,out));
+      const [px,py]=chipPos[i]; const fl=Math.sin(t*1.2+i*1.7)*10; const sc=1+P(t,20.4,25.4)*.06;
+      c.style.opacity=ko*o; c.style.filter=`blur(${(1-ko)*10+(1-o)*12}px)`;
+      c.style.transform=`translate(-50%,-50%) translate(${960+px*(0.7+0.3*k)*sc}px,${540+py*(0.7+0.3*k)*sc+fl}px) scale(${.6+.4*k})`;});
+  }
+  // S6 quote 25.2–29.4
+  if(show('#s6',t,25.2,29.4)){
+    const out=29.4;
+    rise($('#s6 .qm'),t,25.3,{out,y:30,scale:.3});
+    wordsIn($('#s6 h1'),t,25.45,{out});
+    rise($('#s6 .rest'),t,26.2,{out,y:24});
+    rise($('#s6 .who'),t,26.6,{out,y:24});
+  }
+  // S7 CTA 29.2–32
+  if(show("#s7",t,29.2,34.01)){
+    const sp=$$('#s7 [data-split]'); wordsIn(sp[0],t,29.3,{stagger:.07}); wordsIn(sp[1],t,29.7,{stagger:.08});
+    rise($('#btn'),t,30.2,{y:30,scale:.08});
+    $('#btn .sh').style.backgroundPosition=`${150-P(t,30.8,31.7)*200}% 0`;
+    rise($('#url'),t,30.5,{y:20});
+  }
+}
+window.render=render; window.DURATION=DURATION;
+render(0);
+</script></body></html>
