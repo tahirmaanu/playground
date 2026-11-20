@@ -9,7 +9,7 @@ const { spawn } = require('child_process');
   await p.evaluate(() => document.fonts.ready); await p.waitForTimeout(600);
   if (mode === 'stills') {
     for (const t of a.split(',').map(Number)) {
-      await p.evaluate(t => render(t), t);
+      await p.evaluate(t => render(t), t); await p.evaluate(t => seekAll(t), t);
       await p.screenshot({ path: `${out}/s_${t.toFixed(2)}.jpg`, type: 'jpeg', quality: 80 });
     }
   } else {
@@ -17,7 +17,7 @@ const { spawn } = require('child_process');
     const ff = spawn('ffmpeg', ['-y','-loglevel','error','-f','image2pipe','-framerate',String(F),'-i','-',
       '-c:v','libx264','-preset','medium','-crf','15','-pix_fmt','yuv420p', out], { stdio: ['pipe','inherit','inherit'] });
     for (let i = s; i < e; i++) {
-      await p.evaluate(t => render(t), i / F);
+      await p.evaluate(t => render(t), i / F); await p.evaluate(t => seekAll(t), i / F);
       const buf = await p.screenshot({ type: 'jpeg', quality: 95 });
       if (!ff.stdin.write(buf)) await new Promise(r => ff.stdin.once('drain', r));
       if ((i - s) % 75 === 0) console.log(`${out}: ${i - s}/${e - s}`);

@@ -38,7 +38,7 @@ body{font-family:"Inter Display",Inter,sans-serif;color:var(--ink);-webkit-font-
 #phone{position:absolute;left:50%;top:0;width:620px;height:1240px;margin-left:-310px;transform-style:preserve-3d}
 .scr{position:absolute;inset:0;border-radius:64px;overflow:hidden;background:#000;
   box-shadow:0 0 0 14px #0b1020,0 0 0 16px #ffffff2a,0 60px 120px #000000c0,0 0 80px #2e9eff40}
-.scr img{width:100%;height:100%;object-fit:cover;display:block}
+.scr img,.scr video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .scr .notch{position:absolute;top:18px;left:50%;width:150px;height:40px;margin-left:-75px;border-radius:30px;background:#000}
 .scr .shade{position:absolute;inset:0;background:#050812}
 #tile{position:absolute;width:150px;height:150px;border-radius:38px;background:linear-gradient(160deg,#ffffff,#dfe8f5);
@@ -60,9 +60,16 @@ body{font-family:"Inter Display",Inter,sans-serif;color:var(--ink);-webkit-font-
 /* wall */
 #wallwrap{position:absolute;inset:0;perspective:2000px}
 #wall{position:absolute;left:50%;top:50%;width:2400px;margin-left:-1200px;display:grid;grid-template-columns:repeat(7,300px);gap:30px;justify-content:center;transform-style:preserve-3d}
-#wall img{width:300px;height:533px;object-fit:cover;border-radius:24px;border:1px solid #ffffff2a;display:block}
+#wall img,#wall video{width:300px;height:533px;object-fit:cover;border-radius:24px;border:1px solid #ffffff2a;display:block;background:#000}
 
 /* end */
+#me{position:absolute;left:50%;top:320px;width:640px;height:800px;margin-left:-320px;border-radius:56px;overflow:hidden;
+  border:3px solid #61e6ff;box-shadow:0 0 70px #61e6ffaa,0 0 160px #2e9eff66,0 60px 120px #000000c0}
+#me img{width:100%;height:100%;object-fit:cover;object-position:50% 15%;display:block;transform-origin:50% 30%}
+#me .fade{position:absolute;left:0;right:0;bottom:0;height:45%;background:linear-gradient(180deg,transparent,#050812f0)}
+#me .tag{position:absolute;left:0;right:0;bottom:44px;text-align:center;font-size:30px;font-weight:700;letter-spacing:.16em;color:#61e6ff;text-transform:uppercase;text-shadow:0 0 20px #61e6ffaa}
+#lock{position:absolute;left:0;right:0;top:1570px;display:flex;align-items:center;justify-content:center;gap:16px;font-size:44px;font-weight:600;color:#f2f7ffd0}
+#lock svg{width:52px;height:52px}
 #logo{position:absolute;left:50%;top:640px;width:300px;height:300px;margin-left:-150px;overflow:visible}
 </style></head>
 <body><div id="stage">
@@ -116,8 +123,10 @@ body{font-family:"Inter Display",Inter,sans-serif;color:var(--ink);-webkit-font-
       <path class="lp" d="M7 15C8.10457 15 9 15.8954 9 17V20C9 21.1046 8.10457 22 7 22H4C2.89543 22 2 21.1046 2 20V17C2 15.8954 2.89543 15 4 15H7Z" fill="#0C79D8"/>
     </svg>
     <div class="hl" id="h_brand" style="top:1010px;font-size:130px;text-transform:none;letter-spacing:-.05em" data-t="Lumetrify"></div>
-    <div class="pill sm" id="p_sell" style="top:1190px">TELL ME WHAT YOU'RE SELLING</div>
-    <div class="hl small" id="h_url" style="top:1310px;font-weight:600;text-transform:none;color:#f2f7ffc0" data-t="lumetrify.com"></div>
+        <div id="me"><img src="img/abubakar.jpeg"><div class="fade"></div><div class="tag">Video Editor · Lumetrify</div></div>
+    <div class="hl" id="h_name" style="top:1180px;font-size:96px" data-t="ABUBAKAR|*SIDDIQUE*"></div>
+    <div class="pill sm" id="p_sell2" style="top:1430px;font-size:38px">TELL ME WHAT YOU'RE SELLING</div>
+    <div id="lock"><svg viewBox="0 0 24 24"><path d="M12 12H4.72727C3.22104 12 2 10.779 2 9.27273V4.72727C2 3.22104 3.22104 2 4.72727 2H9.27273C10.779 2 12 3.22104 12 4.72727V12Z" fill="#2E9EFF"/><path d="M20 2C21.1046 2 22 2.89543 22 4V7C22 8.10457 21.1046 9 20 9H17C15.8954 9 15 8.10457 15 7V4C15 2.89543 15.8954 2 17 2H20Z" fill="#0C79D8"/><path d="M22 19.2727C22 20.779 20.779 22 19.2727 22H14.7273C13.221 22 12 20.779 12 19.2727V12H19.2727C20.779 12 22 13.221 22 14.7273V19.2727Z" fill="#68C4FF"/><path d="M7 15C8.10457 15 9 15.8954 9 17V20C9 21.1046 8.10457 22 7 22H4C2.89543 22 2 21.1046 2 20V17C2 15.8954 2.89543 15 4 15H7Z" fill="#0C79D8"/></svg><span>lumetrify.com</span></div>
   </div>
 
   <div id="edge"></div>
@@ -171,7 +180,16 @@ function pop(el,t,start,{dur=.35,out=null,outDur=.12,from=.6}={}){
 const show=(id,v)=>{$(id).style.display=v?'block':'none';return v};
 
 // ---------- data ----------
-const IMG="img/";
+const IMG="img/", VID="previews_i/";
+const PREV={"realistic-ai-drama-ad.jpg":"realistic-ai-drama-ad","ai-ugc-storytelling.jpg":"ai-ugc-storytelling","pixar-style-ad.jpg":"pixar-style",
+ "italian-pharmacist-2.jpg":"ai-pharmacist","ai-ugc-halloween-sale.jpg":"ai-ugc-halloween-sale","cartoon-characters-new.png":"cartoon-characters",
+ "realistic-ai-ad.jpg":"ai-cinematic-story","family-shaming-song.jpg":"family-shaming-song","ugc-story.jpg":"ugc-story",
+ "ai-song-competitors-winner.jpg":"ai-song-competitors-winner","founder-polished.jpg":"serlinolab-story","lymphoria-crazy-winner.jpg":"lymphoria-crazy-winner",
+ "skincare-exposed.jpg":"skincare-industry-exposed","tutto-passa.jpg":"tutto","datacamp-2025-redesign.jpg":"datacamp"};
+function media(f,t0){
+  if(!PREV[f]) return `<img src="${IMG+f}">`;
+  return `<img src="${IMG+f}"><video muted playsinline preload="auto" data-t0="${t0}" src="${VID+PREV[f]}.mp4"></video>`;
+}
 const secA=[["realistic-ai-drama-ad.jpg","AI DRAMA","Kling","#ff9aad"],["ai-ugc-storytelling.jpg","AI UGC","HeyGen","#61e6ff"],
  ["pixar-style-ad.jpg","3D ANIMATION","Higgsfield","#82efb9"],["italian-pharmacist-2.jpg","AI SPOKESPERSON","HeyGen","#61e6ff"],
  ["ai-ugc-halloween-sale.jpg","SALE ADS","VEO 3.1","#68C4FF"],["cartoon-characters-new.png","CARTOON ADS","Seedance","#ffd27a"],
@@ -190,14 +208,16 @@ for(let c=0;c<4;c++){const col=document.createElement('div');col.className='fcol
   for(let r=0;r<10;r++){const im=document.createElement('img');im.src=IMG+all[(c*5+r*3)%all.length];col.appendChild(im)} feed.appendChild(col)}
 // phone screens (A + B)
 const phone=$('#phone');
-function mkScreens(list){return list.map(([f])=>{const d=document.createElement('div');d.className='scr';
-  d.innerHTML=`<img src="${IMG+f}"><div class="notch"></div><div class="shade"></div>`;phone.appendChild(d);return d})}
-const scrA=mkScreens(secA), scrB=mkScreens(secB);
+function mkScreens(list,b0,flip0){return list.map(([f],i)=>{const d=document.createElement('div');d.className='scr';
+  const t0=(i===0?b0:flip0+i-1)*B-.25;
+  d.innerHTML=media(f,t0)+`<div class="notch"></div><div class="shade"></div>`;phone.appendChild(d);return d})}
+const scrA=mkScreens(secA,8,10), scrB=mkScreens(secB,21,22);
 // tools
 const toolsEl=$('#tools'); tools.forEach(([n,c])=>toolsEl.insertAdjacentHTML('beforeend',`<div class="tool"><i style="background:${c};box-shadow:0 0 16px ${c}"></i>${n}</div>`));
 const toolPos=[[540,640],[540,800],[540,960],[540,1120],[540,1280],[540,1440],[540,1600],[540,1760]];
 // wall
-const wall=$('#wall'); for(let i=0;i<28;i++){const im=document.createElement('img');im.src=IMG+all[(i*5)%all.length];wall.appendChild(im)}
+const wall=$('#wall'); const wallSrc=all.filter(f=>PREV[f]);
+for(let i=0;i<28;i++){const f=wallSrc[(i*5)%wallSrc.length]; wall.insertAdjacentHTML('beforeend',`<video muted playsinline preload="auto" data-t0="${47*B-(i%5)*1.3}" src="${VID+PREV[f]}.mp4"></video>`)}
 
 const secH=$('#h_sec'), pill=$('#pill'), tile=$('#tile'), cardH=$('#h_card'), qH=$('#h_q');
 
@@ -308,18 +328,46 @@ function render(t){
     wall.style.opacity=expo(P(tb,47,47.6))*(1-P(tb,52.7,53));
     pop($('#p_more'),t,47.5*B,{out:53*B,from:.5});
   }
-  // END 53-64
+  // END 53-64: logo build (53-56), then portrait + name + CTA (56-64)
   if(show('#L_end',tb>=53)){
+    const lo=P(tb,55.6,56.2);
     $$('.lp').forEach((p,i)=>{const s=(53+i*.5)*B; const k=back(P(t,s,s+.35));
       p.style.transformOrigin='12px 12px';p.style.transformBox='view-box';
       p.style.opacity=clamp(k*1.5);p.style.transform=`scale(${.1+.9*k}) rotate(${(1-k)*90}deg)`;});
-    $('#logo').style.filter=`drop-shadow(0 0 ${40+20*Math.sin(t*3)}px #2e9effaa)`;
-    $('#logo').style.transform=`scale(${1+P(tb,53,64)*.05})`;
-    scramble($('#h_brand'),t,55*B,{per:.04,settle:.16});
-    pop($('#p_sell'),t,57*B,{from:.6});
-    scramble($('#h_url'),t,59*B,{per:.03});
+    const lg=$('#logo'); lg.style.display=lo<1?'block':'none';
+    lg.style.filter=`drop-shadow(0 0 ${40+20*Math.sin(t*3)}px #2e9effaa) blur(${lo*14}px)`;
+    lg.style.opacity=1-lo; lg.style.transform=`scale(${1+P(tb,53,56)*.05+lo*.4})`;
+    const br=$('#h_brand'); br.style.display=lo<1?'block':'none';
+    scramble(br,t,54.6*B,{per:.035,settle:.14,out:56.2*B,outDur:.25});
+    const me=$('#me'), k=expo(P(tb,56,57.2));
+    me.style.display=tb>=56?'block':'none';
+    me.style.opacity=clamp(k*1.3);
+    me.style.transform=`translateY(${(1-k)*260}px) scale(${.85+.15*k}) rotateX(${(1-k)*18}deg)`;
+    me.style.filter=k<1?`blur(${(1-k)*16}px)`:'none';
+    $('img',me).style.transform=`scale(${1.12-P(tb,56,64)*.1})`;
+    $('.tag',me).style.opacity=expo(P(tb,57.4,58.2));
+    const nm=$('#h_name'); nm.style.display=tb>=56.6?'block':'none';
+    scramble(nm,t,56.8*B,{per:.03,settle:.14,y:20});
+    pop($('#p_sell2'),t,58.6*B,{from:.6});
+    const lk=$('#lock'), kk=expo(P(tb,59.6,60.6));
+    lk.style.opacity=kk; lk.style.transform=`translateY(${(1-kk)*30}px)`; lk.style.filter=kk<1?`blur(${(1-kk)*10}px)`:'none';
   }
 }
 window.render=render; window.DURATION=DURATION;
+function visible(v){ for(let e=v;e&&e!==document.body;e=e.parentElement){ if(getComputedStyle(e).display==='none') return false } return true }
+window.seekAll=async function(t){
+  const vids=$$('video').filter(visible);
+  await Promise.all(vids.map(v=>new Promise(res=>{
+    const go=()=>{
+      const dur=v.duration-0.05; const rel=Math.max(0,t-(+v.dataset.t0||0)) % dur;
+      const target=Math.floor(rel*30)/30+0.001;
+      if(Math.abs(v.currentTime-target)<0.0005 && v.readyState>=2) return res();
+      v.addEventListener('seeked',()=>res(),{once:true}); v.currentTime=target;
+    };
+    if(v.readyState<1) v.addEventListener('loadedmetadata',go,{once:true}); else go();
+  })));
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  return vids.length;
+};
 render(0);
 </script></body></html>
