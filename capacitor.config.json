@@ -1,5 +1,11 @@
 {
   "appId": "com.patienthistory.clinic",
   "appName": "Ikseeri Dar-ul-Ilaj",
-  "webDir": "www"
+  "webDir": "www",
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_notify",
+      "iconColor": "#a878c4"
+    }
+  }
 }

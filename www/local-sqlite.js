@@ -6,16 +6,16 @@
   const PATIENT_FIELDS = [
     'recordNumber', 'date', 'newVisit', 'patientName', 'age', 'phone', 'address',
     'checkupFee', 'paidAmount', 'disease', 'symptoms', 'pulse', 'hijama',
-    'prescription', 'perhaiz'
+    'prescription', 'perhaiz', 'bodyPoints', 'followUpDays', 'nextVisitDate'
   ];
   const TEXT_FIELDS = [
     'date', 'newVisit', 'patientName', 'age', 'phone', 'address', 'disease',
-    'symptoms', 'pulse', 'hijama', 'prescription'
+    'symptoms', 'pulse', 'hijama', 'prescription', 'followUpDays', 'nextVisitDate'
   ];
   const DATABASE_ACTIONS = new Set([
     'list', 'get', 'search', 'save', 'delete', 'bulk_save',
     'get_settings', 'set_whatsapp_auto_open', 'export_backup',
-    'restore_backup', 'truncate_all'
+    'restore_backup', 'truncate_all', 'list_reminders', 'set_reminder', 'set_setting'
   ]);
 
   let sqlite = null;
@@ -74,7 +74,16 @@
             pulse TEXT,
             prescription TEXT,
             hijama TEXT,
-            perhaiz TEXT NOT NULL DEFAULT '[]'
+            perhaiz TEXT NOT NULL DEFAULT '[]',
+            bodyPoints TEXT NOT NULL DEFAULT '[]',
+            followUpDays TEXT NOT NULL DEFAULT '',
+            nextVisitDate TEXT NOT NULL DEFAULT ''
+          );
+          CREATE TABLE IF NOT EXISTS reminders (
+            recordNumber TEXT PRIMARY KEY,
+            status TEXT NOT NULL DEFAULT 'pending',
+            snoozeUntil TEXT NOT NULL DEFAULT '',
+            isRead INTEGER NOT NULL DEFAULT 0
           );
           CREATE TABLE IF NOT EXISTS app_settings (
             settingKey TEXT PRIMARY KEY,
@@ -86,12 +95,30 @@
           CREATE INDEX IF NOT EXISTS idx_records_date ON records(date);
         `
       });
+      await migrateColumns(db);
       return db;
     })().catch(error => {
       initialization = null;
       throw error;
     });
     return initialization;
+  }
+
+  // Databases created by earlier versions of the app lack the newer columns.
+  async function migrateColumns(db) {
+    const info = await db.query({ database: DATABASE, statement: "SELECT name FROM pragma_table_info('records')", values: [] });
+    const have = new Set((info.values || []).map(row => row.name));
+    const wanted = [
+      ['bodyPoints', "TEXT NOT NULL DEFAULT '[]'"],
+      ['followUpDays', "TEXT NOT NULL DEFAULT ''"],
+      ['nextVisitDate', "TEXT NOT NULL DEFAULT ''"]
+    ];
+    for (const [column, definition] of wanted) {
+      if (!have.has(column)) {
+        await db.execute({ database: DATABASE, transaction: false, statements: `ALTER TABLE records ADD COLUMN ${column} ${definition};` });
+      }
+    }
+    await db.execute({ database: DATABASE, transaction: false, statements: 'CREATE INDEX IF NOT EXISTS idx_records_nextVisitDate ON records(nextVisitDate);' });
   }
 
   async function query(statement, values = []) {
@@ -149,6 +176,34 @@
     return JSON.stringify(selected);
   }
 
+  // Body-chart dots: [{x, y, label}] with x / y as 0..1 fractions of the drawing.
+  function cleanBodyPoints(value) {
+    if (!Array.isArray(value)) return '[]';
+    const out = [];
+    for (const p of value.slice(0, 200)) {
+      const x = Number(p && p.x), y = Number(p && p.y);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+      out.push({
+        x: Math.round(Math.min(1, Math.max(0, x)) * 10000) / 10000,
+        y: Math.round(Math.min(1, Math.max(0, y)) * 10000) / 10000,
+        label: String((p && p.label) || '').trim().slice(0, 12)
+      });
+    }
+    return JSON.stringify(out);
+  }
+
+  function cleanDays(value) {
+    const n = Math.floor(Number(String(value ?? '').replace(/[^0-9]/g, '')));
+    return Number.isFinite(n) && n > 0 && n <= 3650 ? String(n) : '';
+  }
+
+  function parseBodyPoints(text) {
+    try {
+      const decoded = JSON.parse(String(text ?? '[]'));
+      return JSON.parse(cleanBodyPoints(decoded));
+    } catch (_) { return []; }
+  }
+
   function recordFromRow(row) {
     let perhaiz = [];
     try {
@@ -171,7 +226,10 @@
       pulse: String(row.pulse ?? ''),
       hijama: String(row.hijama ?? ''),
       prescription: String(row.prescription ?? ''),
-      perhaiz
+      perhaiz,
+      bodyPoints: parseBodyPoints(row.bodyPoints),
+      followUpDays: String(row.followUpDays ?? ''),
+      nextVisitDate: String(row.nextVisitDate ?? '')
     };
   }
 
@@ -191,6 +249,9 @@
     values.checkupFee = cleanAmount(record.checkupFee ?? '0');
     values.paidAmount = cleanAmount(record.paidAmount ?? '0');
     values.perhaiz = cleanPerhaiz(record.perhaiz);
+    values.bodyPoints = cleanBodyPoints(record.bodyPoints);
+    values.followUpDays = cleanDays(record.followUpDays);
+    if (!values.followUpDays) values.nextVisitDate = '';
     return values;
   }
 
@@ -208,7 +269,7 @@
         const updates = PATIENT_FIELDS.filter(field => field !== 'recordNumber' && Object.prototype.hasOwnProperty.call(record, field));
         if (updates.length) {
           const assignments = updates.map(field => `${field} = ?`).join(', ');
-          const updateValues = updates.map(field => field === 'perhaiz' ? values.perhaiz : values[field]);
+          const updateValues = updates.map(field => values[field]);
           await run(`UPDATE records SET ${assignments} WHERE entryId = ?`, [...updateValues, Number(id)], false);
         }
         return String(found[0].recordNumber);
@@ -226,12 +287,14 @@
 
   async function backupData() {
     const settings = await query('SELECT settingKey, settingValue FROM app_settings ORDER BY settingKey');
+    const reminders = await query('SELECT recordNumber, status, snoozeUntil, isRead FROM reminders ORDER BY recordNumber');
     return {
       format: 'patient-management-local-backup',
       version: 1,
       createdAt: new Date().toISOString(),
       records: await allRecords(),
-      settings
+      settings,
+      reminders
     };
   }
 
@@ -274,12 +337,17 @@
       let duplicates = 0;
       for (const source of data.records) {
         const values = valuesFor(source);
-        const fields = ['recordNumber', ...TEXT_FIELDS, 'checkupFee', 'paidAmount', 'perhaiz', 'hijama'];
-        const valuesByField = { ...values, recordNumber: cleanText(source.recordNumber), hijama: cleanText(source.hijama) };
+        const fields = ['recordNumber', ...TEXT_FIELDS, 'checkupFee', 'paidAmount', 'perhaiz', 'bodyPoints'];
+        const valuesByField = { ...values, recordNumber: cleanText(source.recordNumber) };
         const placeholders = fields.map(() => '?').join(', ');
         const insert = await run(`INSERT OR IGNORE INTO records (${fields.join(', ')}) VALUES (${placeholders})`, fields.map(field => valuesByField[field] ?? ''), false);
         if (Number(insert?.changes?.changes ?? insert?.changes ?? 0) > 0) imported++;
         else duplicates++;
+      }
+      for (const item of Array.isArray(data.reminders) ? data.reminders : []) {
+        if (!item || !cleanText(item.recordNumber)) continue;
+        await run('INSERT OR IGNORE INTO reminders (recordNumber, status, snoozeUntil, isRead) VALUES (?, ?, ?, ?)',
+          [cleanText(item.recordNumber), item.status === 'done' ? 'done' : 'pending', cleanText(item.snoozeUntil), item.isRead ? 1 : 0], false);
       }
       for (const setting of data.settings) {
         await run('INSERT OR IGNORE INTO app_settings (settingKey, settingValue) VALUES (?, ?)', [setting.settingKey, setting.settingValue], false);
@@ -295,6 +363,7 @@
     const deleted = await inTransaction(async () => {
       const count = await query('SELECT COUNT(*) AS total FROM records');
       await run('DELETE FROM records', [], false);
+      await run('DELETE FROM reminders', [], false);
       return Number(count[0]?.total ?? 0);
     });
     return { deletedPatientRecords: deleted, remainingPatientRecords: 0, backupLocation: safety?.fileName || '' };
@@ -342,13 +411,35 @@
       return { ok: true, records: await allRecords() };
     }
     if (action === 'get_settings') {
-      const rows = await query('SELECT settingValue FROM app_settings WHERE settingKey = ?', ['whatsapp_auto_open']);
-      return { ok: true, whatsappAutoOpen: rows[0]?.settingValue === '1' };
+      const rows = await query('SELECT settingKey, settingValue FROM app_settings');
+      const map = Object.fromEntries(rows.map(r => [r.settingKey, r.settingValue]));
+      return { ok: true, whatsappAutoOpen: map.whatsapp_auto_open === '1', reminderTime: /^\d{2}:\d{2}$/.test(map.reminder_time || '') ? map.reminder_time : '09:00' };
     }
     if (action === 'set_whatsapp_auto_open') {
       if (typeof payload.enabled !== 'boolean') throw new Error('A boolean enabled value is required.');
       await run('INSERT INTO app_settings (settingKey, settingValue) VALUES (?, ?) ON CONFLICT(settingKey) DO UPDATE SET settingValue = excluded.settingValue', ['whatsapp_auto_open', payload.enabled ? '1' : '0']);
       return { ok: true, whatsappAutoOpen: payload.enabled };
+    }
+    if (action === 'set_setting') {
+      const key = cleanText(payload.key), value = cleanText(payload.value);
+      if (!['reminder_time'].includes(key)) throw new Error('Unknown setting.');
+      if (key === 'reminder_time' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) throw new Error('Time must look like 09:00.');
+      await run('INSERT INTO app_settings (settingKey, settingValue) VALUES (?, ?) ON CONFLICT(settingKey) DO UPDATE SET settingValue = excluded.settingValue', [key, value]);
+      return { ok: true };
+    }
+    if (action === 'list_reminders') {
+      return { ok: true, reminders: await query('SELECT recordNumber, status, snoozeUntil, isRead FROM reminders') };
+    }
+    if (action === 'set_reminder') {
+      const number = cleanText(payload.recordNumber);
+      if (!number) throw new Error('recordNumber is required.');
+      const rows = await query('SELECT status, snoozeUntil, isRead FROM reminders WHERE recordNumber = ?', [number]);
+      const cur = rows[0] || { status: 'pending', snoozeUntil: '', isRead: 0 };
+      const status = payload.status === undefined ? cur.status : (payload.status === 'done' ? 'done' : 'pending');
+      const snoozeUntil = payload.snoozeUntil === undefined ? cur.snoozeUntil : (/^\d{4}-\d{2}-\d{2}$/.test(String(payload.snoozeUntil)) ? String(payload.snoozeUntil) : '');
+      const isRead = payload.isRead === undefined ? Number(cur.isRead) : (payload.isRead ? 1 : 0);
+      await run('INSERT INTO reminders (recordNumber, status, snoozeUntil, isRead) VALUES (?, ?, ?, ?) ON CONFLICT(recordNumber) DO UPDATE SET status = excluded.status, snoozeUntil = excluded.snoozeUntil, isRead = excluded.isRead', [number, status, snoozeUntil, isRead]);
+      return { ok: true, reminders: await query('SELECT recordNumber, status, snoozeUntil, isRead FROM reminders') };
     }
     if (action === 'export_backup') return { ok: true, backup: await backupData() };
     if (action === 'restore_backup') {
